@@ -1,7 +1,124 @@
 {% extends "base.html" %}
 {% from 'bootstrap5/form.html' import render_form %}
 {% block content %}
-  <!-- Page Header -->
+  <style>
+  /* ── Desktop two-column layout ─────────────────────────────── */
+  .post-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  @media (min-width: 992px) {
+    .post-layout {
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap: 2.5rem;
+      align-items: start;
+    }
+    .post-sidebar {
+      position: sticky;
+      top: 2rem;
+    }
+  }
+
+  @media (min-width: 1200px) {
+    .post-layout {
+      grid-template-columns: minmax(0, 1fr) 300px;
+    }
+  }
+
+  /* ── Sidebar card ───────────────────────────────────────────── */
+  .sidebar-card {
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,.05);
+  }
+  .sidebar-card h6 {
+    font-size: .7rem;
+    font-weight: 700;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #999;
+    margin-bottom: 1rem;
+  }
+
+  /* Author avatar */
+  .author-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: #212529;
+    color: #fff;
+    font-weight: 700;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  /* Comment count badge */
+  .comment-stat {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    font-size: .9rem;
+    color: #555;
+    margin-bottom: .5rem;
+  }
+  .comment-stat svg { flex-shrink: 0; color: #aaa; }
+
+  /* Recent commenters */
+  .commenter-chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #f0f0f0;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #555;
+    margin-right: 4px;
+    margin-bottom: 4px;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #ddd;
+  }
+
+  /* Share buttons */
+  .share-btn {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    padding: .45rem .75rem;
+    border-radius: 8px;
+    font-size: .82rem;
+    font-weight: 500;
+    border: 1px solid #e0e0e0;
+    background: #fafafa;
+    color: #444;
+    text-decoration: none;
+    transition: background .15s, border-color .15s;
+    cursor: pointer;
+  }
+  .share-btn:hover { background: #f0f0f0; border-color: #ccc; color: #222; }
+
+  /* Hide sidebar on mobile */
+  .post-sidebar { display: none; }
+  @media (min-width: 992px) { .post-sidebar { display: block; } }
+
+  /* Divider */
+  .section-divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 2.5rem 0;
+  }
+  </style>
+  <!-- ── Page Header ──────────────────────────────────────────────── -->
   <header class="masthead" style="background-image: url('{{ post.img_url }}')">
     <div class="container position-relative px-4 px-lg-5">
       <div class="row gx-4 gx-lg-5 justify-content-center">
@@ -17,61 +134,149 @@
       </div>
     </div>
   </header>
-  <!-- Post Content -->
-  <article>
-    <div class="container px-4 px-lg-5">
-      <div class="row gx-4 gx-lg-5 justify-content-center">
-        <div class="col-md-10 col-lg-8 col-xl-7">
-          {{ post.body|safe }}
-          <div class="d-flex justify-content-end mb-4">
-            <a class="btn btn-primary"
-               href="{{ url_for('blog.edit_post', post_id=post.id) }}">Edit Post</a>
-          </div>
-        </div>
-      </div>
-    </div>
-  </article>
-  <!-- Comment Form -->
-  <div class="container px-4 px-lg-5">
+  <!-- ── Main content area ────────────────────────────────────────── -->
+  <div class="container px-4 px-lg-5 my-5">
     <div class="row gx-4 gx-lg-5 justify-content-center">
-      <div class="col-md-10 col-lg-8 col-xl-7">
-        <hr class="my-4">
-        <h4 class="mb-4">Leave a Comment</h4>
-        {{ render_form(comment_form, action=url_for('blog.comment', post_id=post.id) , method="POST", novalidate=True) }}
-        {{ ckeditor.load() }}
-        <!-- Comments List -->
-        <hr class="my-4">
-        <h4 class="mb-4">{{ post.comments|length }} Comment{{ 's' if post.comments|length != 1 }}</h4>
-        {% if post.comments %}
-          {% for comment in post.comments %}
-            <div class="d-flex gap-3 mb-4">
-              <!-- Avatar -->
-              <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center flex-shrink-0"
-                   style="width:44px;
-                          height:44px;
-                          font-weight:bold">{{ comment.author.name[0].upper() }}</div>
-              <!-- Comment content -->
-              <div class="flex-grow-1">
-                <div class="d-flex justify-content-between align-items-start">
-                  <div class="fw-bold">{{ comment.author.name }}</div>
-                  <!-- Delete button: show only if current user is author -->
-                  {% if current_user.is_authenticated and comment.author.id == current_user.id %}
-                    <form action="{{ url_for('blog.delete_comment', id=comment.id) }}"
-                          method="POST"
-                          style="display:inline">
-                      <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
-                    </form>
-                  {% endif %}
+      <!-- Wide inner column that itself splits into post + sidebar -->
+      <div class="col-12 col-xl-11">
+        <div class="post-layout">
+          <!-- ── LEFT: Article + Comments ──────────────────────── -->
+          <div class="post-main">
+            <!-- Article body -->
+            <article>
+              {{ post.body|safe }}
+              <div class="d-flex justify-content-end mt-4 mb-2">
+                <a class="btn btn-primary btn-sm"
+                   href="{{ url_for('blog.edit_post', post_id=post.id) }}">✏️ Edit Post</a>
+              </div>
+            </article>
+            <hr class="section-divider">
+            <!-- Comment form -->
+            <h4 class="mb-4">Leave a Comment</h4>
+            {{ render_form(comment_form, action=url_for('blog.comment', post_id=post.id) , method="POST", novalidate=True) }}
+            {{ ckeditor.load() }}
+            <hr class="section-divider">
+            <!-- Comments list -->
+            <h4 class="mb-4">
+              {{ post.comments|length }}
+              Comment{{ 's' if post.comments|length != 1 }}
+            </h4>
+            {% if post.comments %}
+              {% for comment in post.comments %}
+                <div class="d-flex gap-3 mb-4">
+                  <div class="rounded-circle bg-dark text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                       style="width:44px;
+                              height:44px;
+                              font-weight:bold">{{ comment.author.name[0].upper() }}</div>
+                  <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div class="fw-bold">{{ comment.author.name }}</div>
+                      {% if current_user.is_authenticated and comment.author.id == current_user.id %}
+                        <form action="{{ url_for('blog.delete_comment', id=comment.id) }}"
+                              method="POST"
+                              style="display:inline">
+                          <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                        </form>
+                      {% endif %}
+                    </div>
+                    <div class="text-muted">{{ comment.text|safe }}</div>
+                  </div>
                 </div>
-                <div class="text-muted">{{ comment.text|safe }}</div>
+                {% if not loop.last %}<hr class="my-2">{% endif %}
+              {% endfor %}
+            {% else %}
+              <p class="text-muted fst-italic">No comments yet. Be the first!</p>
+            {% endif %}
+          </div>
+          <!-- /post-main -->
+          <!-- ── RIGHT: Sticky Sidebar ──────────────────────────── -->
+          <aside class="post-sidebar">
+            <!-- Author card -->
+            <div class="sidebar-card">
+              <h6>About the author</h6>
+              <div class="d-flex align-items-center gap-3 mb-2">
+                <div class="author-avatar">{{ post.author.name[0].upper() }}</div>
+                <div>
+                  <div class="fw-semibold">{{ post.author.name }}</div>
+                  <div class="text-muted" style="font-size:.82rem">{{ post.date }}</div>
+                </div>
               </div>
             </div>
-            {% if not loop.last %}<hr class="my-2">{% endif %}
-          {% endfor %}
-        {% else %}
-          <p class="text-muted fst-italic">No comments yet. Be the first!</p>
-        {% endif %}
+            <!-- Stats card -->
+            <div class="sidebar-card">
+              <h6>Post stats</h6>
+              <div class="comment-stat">
+                <!-- comment icon -->
+                <svg xmlns="http://www.w3.org/2000/svg"
+                     width="16"
+                     height="16"
+                     fill="currentColor"
+                     viewBox="0 0 16 16">
+                  <path d="M2.678 11.894a1 1 0 0 1 .287.801 11 11 0 0 1-.398 2c1.395-.323 2.247-.697 2.634-.893a1 1 0 0 1 .71-.074A8 8 0 0 0 8 14c3.996 0 7-2.807 7-6s-3.004-6-7-6-7 2.808-7 6c0 1.468.617 2.83 1.678 3.894" />
+                </svg>
+                <span><strong>{{ post.comments|length }}</strong> comment{{ 's' if post.comments|length != 1 }}</span>
+              </div>
+              {% if post.comments %}
+                <div style="font-size:.8rem;color:#888;margin-bottom:.5rem;">Recent commenters</div>
+                <div>
+                  {% for comment in post.comments[-6:] %}
+                    <span class="commenter-chip" title="{{ comment.author.name }}">{{ comment.author.name[0].upper() }}</span>
+                  {% endfor %}
+                </div>
+              {% endif %}
+            </div>
+            <!-- Share card -->
+            <div class="sidebar-card">
+              <h6>Share this post</h6>
+              <div class="d-flex flex-column gap-2">
+                <a class="share-btn"
+                   href="https://twitter.com/intent/tweet?text={{ post.title|urlencode }}&url={{ request.url|urlencode }}"
+                   target="_blank"
+                   rel="noopener">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                       width="15"
+                       height="15"
+                       fill="currentColor"
+                       viewBox="0 0 16 16">
+                    <path d="M12.6.75h2.454l-5.36 6.142L16 15.25h-4.937l-3.867-5.07-4.425 5.07H.316l5.733-6.57L0 .75h5.063l3.495 4.633L12.601.75Zm-.86 13.028h1.36L4.323 2.145H2.865z" />
+                  </svg>
+                  Share on X
+                </a>
+                <a class="share-btn"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{ request.url|urlencode }}"
+                   target="_blank"
+                   rel="noopener">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                       width="15"
+                       height="15"
+                       fill="currentColor"
+                       viewBox="0 0 16 16">
+                    <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951" />
+                  </svg>
+                  Share on Facebook
+                </a>
+                <button class="share-btn"
+                        onclick="navigator.clipboard.writeText(window.location.href).then(()=>this.textContent='✓ Copied!')">
+                  <svg xmlns="http://www.w3.org/2000/svg"
+                       width="15"
+                       height="15"
+                       fill="currentColor"
+                       viewBox="0 0 16 16">
+                    <path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1z" />
+                    <path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0z" />
+                  </svg>
+                  Copy link
+                </button>
+              </div>
+            </div>
+          </aside>
+          <!-- /post-sidebar -->
+        </div>
+        <!-- /post-layout -->
       </div>
+      <!-- /col -->
     </div>
+    <!-- /row -->
   </div>
+  <!-- /container -->
 {% endblock %}
