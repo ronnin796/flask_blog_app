@@ -3,13 +3,14 @@ from flask_bootstrap import Bootstrap5
 from extensions import db, login_manager, ckeditor
 from views.blog_views import blog_bp
 from views.user_views import user_bp
+from decouple import config
 
 
 def create_app():
 
     app = Flask(__name__)
 
-    app.config["SECRET_KEY"] = "8BYkEfBA6O6donzWlSihBXox7C0sKR6b"
+    app.config["SECRET_KEY"] = config("SECRET_KEY")
     app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///posts.db"
 
     Bootstrap5(app)
